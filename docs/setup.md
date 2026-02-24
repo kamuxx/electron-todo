@@ -38,7 +38,8 @@ electron-todo/
 ├── preload.ts                ← Bridge seguro Node ↔ UI (contextBridge)
 ├── vite.config.ts            ← Configuración de Vite + Tailwind + React
 ├── tsconfig.json             ← TypeScript en strict mode
-└── package.json              ← Scripts, metadatos y dependencias
+├── assets/
+│   └── icon.ico              ← Ícono de la app (.ico para Windows, mínimo 256x256)
 ```
 
 **Flujo de dos procesos:**
@@ -106,8 +107,8 @@ bun add -d @types/react @types/react-dom @types/node
     "dev:main": "electron .",
     "app:start": "concurrently \"bun run dev:ui\" \"bun run dev:main\"",
     "app:dir": "electron-builder --dir",
-    "app:dist": "electron-builder",
-    "app:publish": "electron-builder -p always"
+    "app:dist": "rm -rf release && electron-builder",
+    "app:publish": "rm -rf release && electron-builder -p always"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
@@ -148,6 +149,8 @@ bun add -d @types/react @types/react-dom @types/node
     },
     "nsis": {
       "oneClick": false
+      // true (default): instalación silenciosa sin asistente (instala directo en AppData)
+      // false: muestra el asistente "Next > Next > Install > Finish" con selector de carpeta
     }
   },
   "publish": {
@@ -336,7 +339,77 @@ export default function Init() {
 
 ---
 
-## Paso 8 — Entry Point de Electron
+## Paso 7.5 — Configurar Íconos de la App
+
+> Este paso aplica una vez que tienes tu archivo `.ico` en la carpeta `assets/`.
+
+### Requisitos del archivo
+
+| Parámetro | Valor |
+|---|---|
+| Formato | `.ico` (Windows), `.icns` (macOS), `.png` (Linux) |
+| Tamaño mínimo | 256×256 px |
+| Forma | Cuadrada (1:1) |
+
+Para obtener un `.ico` desde cualquier imagen `.png`, usa [convertico.com](https://convertico.com).
+
+> ⚠️ **Validación del ICO:** Un PNG renombrado a `.ico` pasa el build pero el ícono no se embebe
+> correctamente. Para verificar que el archivo es un ICO real, ábrelo con doble clic en Windows Explorer.
+> Si se pre-visualiza como ícono (con miniaturas de distintos tamaños), es válido.
+> Si solo abre como imagen plana, debes reconvertirlo.
+
+### Lugar 1 — Ícono del instalador (`package.json`)
+
+Esto determina el ícono que el sistema operativo asigna al ejecutable `.exe` instalado.
+
+```json
+"build": {
+  "appId": "com.tuusuario.electron-todo",
+  "productName": "electron-todo",
+  "icon": "assets/logo.ico",  // ← El nombre debe coincidir EXACTAMENTE con el archivo en assets/
+  "win": { ... }
+}
+```
+
+> ⚠️ **El nombre del archivo importa:** Si el archivo se llama `logo.ico` y declaras `icon.ico`,
+> `electron-builder` no lanzará ningún error de archivo — simplemente usará el ícono default
+> de Electron sin avisar. Verifica siempre con `ls -la assets/` que el nombre sea idéntico.
+
+### Lugar 2 — Ícono de la ventana en ejecución (`src/app.ts`)
+
+Esto determina el ícono que aparece en la barra de tareas y en la barra de título mientras la app está corriendo.
+Debe agregarse al objeto `BrowserWindowOptions`:
+
+Primero, añade `icon` a la interfaz `BrowserWindowOptions` en `src/types/browser.ts`:
+
+```typescript
+export interface BrowserWindowOptions {
+    width: number;
+    height: number;
+    title: string;
+    icon: string;               // ← Agregar esta línea
+    webPreferences: WebPreferencesType;
+}
+```
+
+Luego, en `src/app.ts`, dentro del objeto de opciones:
+
+```typescript
+const optionsWindow: BrowserWindowOptions = {
+    width: 1366,
+    height: 768,
+    title: "Todo App",
+    icon: path.join(__dirname, "../assets/icon.ico"),  // ← Agregar esta línea
+    webPreferences: { ... }
+};
+```
+
+> **Nota:** `path.join(__dirname, "../assets/icon.ico")` usa la ruta absoluta
+> calculada desde el archivo compilado, lo que garantiza que funciona tanto en
+> desarrollo (`src/app.ts`) como en producción (`release/win-unpacked/`).
+
+---
+
 
 **Archivo:** `main.ts` (raíz del proyecto, apuntado por `"main"` en `package.json`)
 
@@ -484,6 +557,23 @@ bun run dev:main  # Electron cargando la URL de Vite
 
 ---
 
+## Pre-Build: Limpieza Antes de Compilar
+
+Antes de ejecutar `app:dir`, `app:dist` o `app:publish`, es **obligatorio**:
+
+1. **Cerrar toda instancia de Electron** que esté corriendo (incluso en segundo plano).
+   `rcedit` no puede modificar el `.exe` si otro proceso lo tiene abierto.
+
+2. **Limpiar la carpeta `release/`** de builds anteriores:
+   ```bash
+   rm -rf release/
+   ```
+
+3. **Verificar que el `.ico` es un ICO real** (no un PNG renombrado).
+   Abrirlo con doble clic en Windows Explorer — debe mostrar miniaturas de distintos tamaños.
+
+---
+
 ## Paso 15 — Publicar en GitHub (Auto-Updater)
 
 ### Pre-requisitos
@@ -537,4 +627,7 @@ const checkUpdate = () => {
 | `Cannot find name 'document'` | TypeScript en modo Node.js sin tipos de DOM | Agregar `"DOM"` al `lib` en `tsconfig.json` |
 | `ERR_CONNECTION_REFUSED` en Electron | Vite no estaba corriendo antes de lanzar Electron | Usar `app:start` (concurrently) para lanzar ambos |
 | `base: "./"` faltante en Vite | Electron no puede resolver rutas absolutas del build | Agregar `base: "./"` en `vite.config.ts` |
-| `fileURLToPath` de `"bun"` | Bun no existe en el runtime de Electron/Node | Importar de `"node:url"` siempre |
+| `default Electron icon is used` | El `.ico` no existe en la ruta declarada o no es un ICO real | Verificar ruta en `build.icon`, reconvertir en convertico.com |
+| `rcedit: Fatal error: Unable to commit changes` | El `.exe` está bloqueado por otro proceso o el ICO es inválido | Cerrar todas las instancias de Electron, borrar `release/` y reintentar |
+| `build.nsis has an unknown property 'onClick'` | Typo: la propiedad es `oneClick` no `onClick` | Cambiar `onClick` → `oneClick` en la sección `nsis` del `build` |
+| `build has unknown property 'repository'` | `repository` no es campo válido dentro de `build` de electron-builder | Mover `repository` a la raíz del `package.json` (nivel npm estándar) |

@@ -40,7 +40,8 @@
     "typescript": "^5"
   },
   "build": {
-    "appId": "com.electron.todo",
+    "appId": "com.github.kamuxx.electrontodo",
+    "icon": "assets/logo.ico",
     "productName": "electron-todo",
     "win": {
       "target": [
@@ -57,7 +58,7 @@
       "output": "release"
     },
     "nsis": {
-      "onClick": false
+      "oneClick": false
     }
   },
   "private": true,
@@ -66,8 +67,8 @@
     "dev:main": "electron .",
     "app:start": "concurrently \"bun run dev:ui\" \"bun run dev:main\"",
     "app:dir": "electron-builder --dir",
-    "app:dist": "electron-builder",
-    "app:publish": "electron-builder -p always"
+    "app:dist": "rm -rf release && electron-builder",
+    "app:publish": "rm -rf release && electron-builder -p always"
   },
   "type": "module",
   "dependencies": {
