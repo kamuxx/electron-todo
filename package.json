@@ -1,0 +1,42 @@
+{
+  "name": "electron-todo",
+  "main": "main.ts",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^25.3.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "concurrently": "^9.2.1",
+    "electron-builder": "^26.8.1",
+    "nodemon": "^3.1.14",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "vite": "^7.3.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "build": {
+    "appId": "com.electron.todo",
+    "repository": "https://github.com/kamuxx/electron-todo",
+    "mac": {
+      "category": "todo-list-app"
+    }
+  },
+  "private": true,
+  "scripts": {
+    "dev:ui": "vite",
+    "dev:main": "electron .",
+    "app:start": "concurrently \"bun run dev:ui\" \"bun run dev:main\"",
+    "app:dir": "electron-builder --dir",
+    "app:dist": "electron-builder",
+    "app:publish": "electron-builder -p always"
+  },
+  "type": "module",
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "electron": "^40.6.0",
+    "tailwindcss": "^4.2.1"
+  }
+}
