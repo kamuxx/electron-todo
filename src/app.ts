@@ -1,6 +1,7 @@
 import type  {BrowserWindowOptions} from "@types/browser";
 import { fileURLToPath } from "node:url";
-import {app, BrowserWindow} from "electron";
+import {app, autoUpdater, BrowserWindow} from "electron";
+import {appUpdater} from 'electron-updater'
 import path  from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,6 +24,15 @@ const CreateWindow = () => {
     mainWin.loadURL("http://localhost:5173")
 }
 
+const UpdateApp = () => {
+    appUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = false;
+}
+
+const checkUpdate = () => {
+    appUpdater.checkForUpdates();
+}
+
 
 export default function Init(){
     app.whenReady().then(CreateWindow);
@@ -36,4 +46,6 @@ export default function Init(){
             CreateWindow();
         }
     })
+
+    app.on('check-for-updates', checkUpdate);
 }
