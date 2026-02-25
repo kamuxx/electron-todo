@@ -275,8 +275,8 @@ export interface BrowserWindowOptions {
 ```typescript
 import type { BrowserWindowOptions } from "@types/browser";
 import { fileURLToPath } from "node:url";
-import { app, autoUpdater, BrowserWindow } from "electron";
-import { appUpdater } from "electron-updater";
+import { app, BrowserWindow } from "electron";
+import { autoUpdater } from "electron-updater"; // ← El export correcto es autoUpdater, no appUpdater
 import path from "node:path";
 
 // Recreamos __dirname porque usamos "type": "module" (ESM)
@@ -305,13 +305,13 @@ const CreateWindow = () => {
 
 // Configura el comportamiento del updater (sin auto-descarga ni auto-instalación)
 const UpdateApp = () => {
-    appUpdater.autoDownload = false;              // El usuario decide cuándo descargar
-    autoUpdater.autoInstallOnAppQuit = false;     // El usuario decide cuándo instalar
+    autoUpdater.autoDownload = false;              // El usuario decide cuándo descargar
+    autoUpdater.autoInstallOnAppQuit = false;      // El usuario decide cuándo instalar
 };
 
 // Dispara la verificación de actualizaciones contra GitHub Releases
 const checkUpdate = () => {
-    appUpdater.checkForUpdates();
+    autoUpdater.checkForUpdates();
 };
 
 export default function Init() {
@@ -630,4 +630,4 @@ const checkUpdate = () => {
 | `default Electron icon is used` | El `.ico` no existe en la ruta declarada o no es un ICO real | Verificar ruta en `build.icon`, reconvertir en convertico.com |
 | `rcedit: Fatal error: Unable to commit changes` | El `.exe` está bloqueado por otro proceso o el ICO es inválido | Cerrar todas las instancias de Electron, borrar `release/` y reintentar |
 | `build.nsis has an unknown property 'onClick'` | Typo: la propiedad es `oneClick` no `onClick` | Cambiar `onClick` → `oneClick` en la sección `nsis` del `build` |
-| `build has unknown property 'repository'` | `repository` no es campo válido dentro de `build` de electron-builder | Mover `repository` a la raíz del `package.json` (nivel npm estándar) |
+| `appUpdater` does not provide an export named 'appUpdater' | `electron-updater` no tiene ese export — el correcto es `autoUpdater` | Cambiar `import { appUpdater }` → `import { autoUpdater }` de `electron-updater` |

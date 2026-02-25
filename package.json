@@ -1,7 +1,7 @@
 {
   "name": "electron-todo",
   "description": "App to manage ToDo Tasks",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "kamuxx",
   "license": "MIT",
   "main": "main.ts",
@@ -63,9 +63,9 @@
   },
   "private": true,
   "scripts": {
-    "dev:ui": "vite",
-    "dev:main": "electron .",
-    "app:start": "concurrently \"bun run dev:ui\" \"bun run dev:main\"",
+    "start:ui": "vite",
+    "start:main": "electron .",
+    "app:start": "concurrently \"bun run start:ui\" \"bun run start:main\"",
     "app:dir": "electron-builder --dir",
     "app:dist": "rm -rf release && electron-builder",
     "app:publish": "rm -rf release && electron-builder -p always"
